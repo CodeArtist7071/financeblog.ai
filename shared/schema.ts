@@ -124,6 +124,28 @@ export const insertContentPromptSchema = createInsertSchema(contentPrompts).omit
 export type InsertContentPrompt = z.infer<typeof insertContentPromptSchema>;
 export type ContentPrompt = typeof contentPrompts.$inferSelect;
 
+// Comment schema
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  content: text("content").notNull(),
+  postId: integer("post_id").notNull(),
+  userId: integer("user_id"),
+  authorName: text("author_name").notNull(),
+  authorEmail: text("author_email").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  isApproved: boolean("is_approved").notNull().default(false),
+  parentId: integer("parent_id"),
+});
+
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+  isApproved: true,
+});
+
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type Comment = typeof comments.$inferSelect;
+
 // Combined types
 export type BlogPostWithAuthor = Post & {
   author: Author;
@@ -132,4 +154,12 @@ export type BlogPostWithAuthor = Post & {
 
 export type CryptoAssetWithCategory = CryptoAsset & {
   category: Category;
+};
+
+export type CommentWithReplies = Comment & {
+  replies?: CommentWithReplies[];
+};
+
+export type PostWithComments = BlogPostWithAuthor & {
+  comments: CommentWithReplies[];
 };

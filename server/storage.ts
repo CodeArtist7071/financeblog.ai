@@ -5,7 +5,9 @@ import {
   categories, type Category, type InsertCategory,
   cryptoAssets, type CryptoAsset, type InsertCryptoAsset,
   contentPrompts, type ContentPrompt, type InsertContentPrompt,
-  type BlogPostWithAuthor, type CryptoAssetWithCategory
+  comments, type Comment, type InsertComment,
+  type BlogPostWithAuthor, type CryptoAssetWithCategory,
+  type CommentWithReplies, type PostWithComments
 } from "@shared/schema";
 
 export interface IStorage {
@@ -18,6 +20,7 @@ export interface IStorage {
   getPosts(): Promise<BlogPostWithAuthor[]>;
   getPostsByCategory(categoryId: number): Promise<BlogPostWithAuthor[]>;
   getPostBySlug(slug: string): Promise<BlogPostWithAuthor | undefined>;
+  getPostWithComments(slug: string): Promise<PostWithComments | undefined>;
   createPost(post: InsertPost): Promise<Post>;
   updatePost(id: number, post: Partial<InsertPost>): Promise<Post | undefined>;
   deletePost(id: number): Promise<boolean>;
@@ -40,6 +43,13 @@ export interface IStorage {
   getCryptoAssetBySlug(slug: string): Promise<CryptoAssetWithCategory | undefined>;
   createCryptoAsset(asset: InsertCryptoAsset): Promise<CryptoAsset>;
   updateCryptoAsset(id: number, asset: Partial<InsertCryptoAsset>): Promise<CryptoAsset | undefined>;
+  
+  // Comment methods
+  getComments(postId: number): Promise<Comment[]>;
+  getCommentsBySlug(slug: string): Promise<CommentWithReplies[]>;
+  createComment(comment: InsertComment): Promise<Comment>;
+  approveComment(id: number): Promise<Comment | undefined>;
+  deleteComment(id: number): Promise<boolean>;
   
   // Content Generation methods
   getContentPrompts(): Promise<ContentPrompt[]>;

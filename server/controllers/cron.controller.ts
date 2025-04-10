@@ -1,12 +1,18 @@
 import { Request, Response } from 'express';
-import { GenerationSchedule } from '../models/generation-schedule.model';
+import { GenerationSchedule, IGenerationScheduleDocument } from '../models/generation-schedule.model';
 import { Topic } from '../models/topic.model';
 import { Post } from '../models/post.model';
 import { Category } from '../models/category.model';
 import { User } from '../models/user.model';
 import { initOpenAI, generateBlogPost } from '../lib/openai';
-import mongoose from 'mongoose';
+import mongoose, { ObjectId } from 'mongoose';
 import { ContentPrompt } from '@shared/schema';
+
+// Type guard to check if a value is an ObjectId
+function isObjectId(value: any): value is ObjectId {
+  return value instanceof mongoose.Types.ObjectId || 
+         (typeof value === 'object' && value !== null && '_id' in value);
+}
 
 // Initialize OpenAI
 initOpenAI();
@@ -53,8 +59,10 @@ export const dailyContentGeneration = async (req: Request, res: Response): Promi
     for (const schedule of pendingSchedules) {
       try {
         // If no author found, use first admin
-        let authorId = schedule.authorId?._id;
-        if (!authorId) {
+        let authorId: mongoose.Types.ObjectId;
+        if (schedule.authorId && '_id' in schedule.authorId) {
+          authorId = schedule.authorId._id;
+        } else {
           const adminUser = await User.findOne({ isAdmin: true });
           if (!adminUser) {
             throw new Error('No admin user found to assign as author');
@@ -64,31 +72,40 @@ export const dailyContentGeneration = async (req: Request, res: Response): Promi
 
         // Get category - required for post
         const category = schedule.categoryId;
-        if (!category) {
+        if (!category || !('_id' in category)) {
           throw new Error('Category not found');
         }
 
         // Prepare the prompt data
         // We're using the schedule title/description as the prompt
-        const promptData = {
-          id: mongoose.Types.ObjectId(), // Temporary ID for the function call
-          title: schedule.title,
+        const promptData: ContentPrompt = {
+          id: Number(new mongoose.Types.ObjectId().toString().slice(-8)), // Generate numeric id from ObjectId
+          name: schedule.title,
+          description: schedule.description || "",
           promptTemplate: `Write a comprehensive blog post about ${schedule.title}. 
 The post should cover the following aspects:
 - ${schedule.description}
 - Focus on {{category}} industry insights
 - Include up-to-date information
 - Provide actionable advice for readers`,
-          categoryId: category._id,
-          usageCount: 0,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          categoryId: Number(category._id),
+          timesUsed: 0,
+          lastUsed: null,
+          createdAt: new Date()
         };
 
-        // Generate blog post
+        // Determine if the schedule has relatedAssets
+        const relatedAssets: string[] = [];
+        
+        // Only add relatedAssets if the property exists on the schedule
+        if ('relatedAssets' in schedule && Array.isArray(schedule.relatedAssets)) {
+          relatedAssets.push(...schedule.relatedAssets);
+        }
+        
+        // Generate blog post - convert ObjectId to number for the OpenAI integration
         const postData = await generateBlogPost(
           promptData,
-          schedule.relatedAssets || [],
+          relatedAssets,
           authorId
         );
 

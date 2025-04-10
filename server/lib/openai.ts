@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { log } from "../vite";
 import { BlogPostWithAuthor, ContentPrompt, InsertPost } from "@shared/schema";
 import { storage } from "../storage";
+import mongoose from "mongoose";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const MODEL = "gpt-4o";
@@ -22,7 +23,7 @@ export function initOpenAI() {
 export async function generateBlogPost(
   prompt: ContentPrompt,
   assets: string[],
-  authorId: number
+  authorId: any // Accept any type of ID (number for in-memory, ObjectId for MongoDB)
 ): Promise<InsertPost | null> {
   if (!openai) {
     log("OpenAI client not initialized. Cannot generate content.", "openai");
@@ -34,7 +35,31 @@ export async function generateBlogPost(
     await storage.recordPromptUsage(prompt.id);
 
     // Get category information
-    const category = await storage.getCategory(prompt.categoryId);
+    // We support both MongoDB ObjectId and numeric id from memory storage
+    let category;
+    try {
+      // First try to get category by direct ID from in-memory storage
+      category = await storage.getCategory(prompt.categoryId);
+      
+      // If category not found and we're using MongoDB integration, the category may need to be fetched directly
+      if (!category && typeof prompt.categoryId === 'string' || typeof prompt.categoryId === 'object') {
+        const Category = mongoose.model('Category');
+        const mongoCategory = await Category.findById(prompt.categoryId);
+        if (mongoCategory) {
+          // Convert MongoDB category to the format expected by the rest of the code
+          category = {
+            id: mongoCategory._id,
+            name: mongoCategory.name,
+            slug: mongoCategory.slug,
+            description: mongoCategory.description,
+            icon: mongoCategory.icon || ''
+          };
+        }
+      }
+    } catch (error) {
+      log(`Error retrieving category: ${error}`, "openai");
+    }
+    
     if (!category) {
       throw new Error(`Category not found for prompt: ${prompt.id}`);
     }

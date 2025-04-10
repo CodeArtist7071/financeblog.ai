@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BlogPostWithAuthor } from "@shared/schema";
+import { SEO } from "@/components/SEO";
 
 // Enhanced Markdown parser for finance content
 const parseMarkdown = (markdown: string) => {
@@ -153,6 +154,19 @@ const BlogPost = () => {
 
   return (
     <div className="py-10">
+      {/* SEO tags for the blog post */}
+      <SEO 
+        title={post.title}
+        description={post.excerpt}
+        image={post.coverImage}
+        type="article"
+        article={{
+          publishedTime: new Date(post.publishedAt).toISOString(),
+          author: post.author.name,
+          section: post.category?.name,
+          tags: post.tags
+        }}
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumbs */}
         <div className="mb-8">

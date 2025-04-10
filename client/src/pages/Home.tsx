@@ -3,6 +3,7 @@ import { Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BlogCard from "../components/BlogCard";
 import { BlogPostWithAuthor } from "@shared/schema";
+import { SEO } from "@/components/SEO";
 
 const Home = () => {
   const { data: posts, isLoading, error } = useQuery<BlogPostWithAuthor[]>({

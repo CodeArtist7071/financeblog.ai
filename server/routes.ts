@@ -1,8 +1,172 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { z } from "zod";
+import { comparePassword, generateToken, hashPassword } from "./lib/auth";
+import { authenticate, requireAdmin } from "./middleware/auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication routes
+  // Validation schemas
+  const loginSchema = z.object({
+    email: z.string().email({ message: "Invalid email address" }),
+    password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  });
+
+  const registerSchema = z.object({
+    username: z.string().min(3, { message: "Username must be at least 3 characters" }),
+    email: z.string().email({ message: "Invalid email address" }),
+    password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  });
+
+  // Login route
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    try {
+      // Validate request body
+      const validatedData = loginSchema.parse(req.body);
+      
+      // Find user by email
+      const user = await storage.getUserByUsername(validatedData.email);
+      
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Check password
+      const passwordValid = await comparePassword(validatedData.password, user.password);
+      
+      if (!passwordValid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Generate JWT token
+      const token = generateToken(user);
+      
+      // Set cookie with the token
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Secure in production
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: "strict"
+      });
+      
+      // Return user info (without password)
+      const { password, ...userWithoutPassword } = user;
+      res.status(200).json({ 
+        user: userWithoutPassword,
+        token // Also send token in response body for clients that don't use cookies
+      });
+      
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Validation failed", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Register new admin (requires admin privileges)
+  app.post("/api/auth/register", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      // Validate request body
+      const validatedData = registerSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(validatedData.email);
+      
+      if (existingUser) {
+        return res.status(409).json({ error: "User with this email already exists" });
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(validatedData.password);
+      
+      // Create new user
+      const newUser = await storage.createUser({
+        username: validatedData.username,
+        email: validatedData.email,
+        password: hashedPassword,
+        isAdmin: true // All registered users through this route are admins
+      });
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = newUser;
+      
+      res.status(201).json(userWithoutPassword);
+      
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Validation failed", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Registration error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Logout route
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    res.clearCookie("token");
+    res.status(200).json({ message: "Logged out successfully" });
+  });
+
+  // Get current user route
+  app.get("/api/auth/me", authenticate, (req: Request, res: Response) => {
+    res.status(200).json({ user: req.user });
+  });
+
+  // Initial admin setup route - creates first admin if none exists
+  app.post("/api/auth/setup", async (req: Request, res: Response) => {
+    try {
+      // Check if any admin exists
+      const users = await storage.getUsers();
+      
+      if (users && users.length > 0) {
+        return res.status(403).json({ error: "Setup already completed" });
+      }
+      
+      // Validate request body
+      const validatedData = registerSchema.parse(req.body);
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(validatedData.password);
+      
+      // Create admin user
+      const adminUser = await storage.createUser({
+        username: validatedData.username,
+        email: validatedData.email,
+        password: hashedPassword,
+        isAdmin: true
+      });
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = adminUser;
+      
+      res.status(201).json({
+        message: "Admin setup completed successfully",
+        user: userWithoutPassword
+      });
+      
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Validation failed", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Admin setup error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
   // API routes for blog
   app.get("/api/posts", async (req, res) => {
     try {

@@ -14,6 +14,7 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   
   // Post methods
@@ -109,9 +110,18 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      isAdmin: insertUser.isAdmin ?? false,
+      createdAt: new Date() 
+    };
     this.users.set(id, user);
     return user;
   }

@@ -19,9 +19,21 @@ initOpenAI();
 
 /**
  * Verify that the request has a valid cron secret
+ * @param req - The Express request object
+ * @returns true if the cron secret in the request header matches the CRON_SECRET environment variable
+ * 
+ * Security Note: The cron endpoint is protected by a secret key that must be provided
+ * in the X-CRON-SECRET header. This prevents unauthorized access to the content generation
+ * endpoint. Make sure to set the CRON_SECRET environment variable.
  */
 const verifySecret = (req: Request): boolean => {
   const secret = req.headers['x-cron-secret'];
+  
+  if (!process.env.CRON_SECRET) {
+    console.warn('CRON_SECRET environment variable is not set. Cron endpoint security is compromised!');
+    return false; // Always return false if CRON_SECRET is not set to prevent unauthorized access
+  }
+  
   return secret === process.env.CRON_SECRET;
 };
 

@@ -62,11 +62,34 @@ connectDB();
 
 const app: Express = express();
 
+// Import custom middleware
+import corsMiddleware from './middleware/cors.middleware';
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors());
+
+// Configure CORS with more specific options based on environment
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL || 'https://yourdomain.com'] // Use actual frontend URL in production
+    : ['http://localhost:3000', 'http://localhost:5000', 'http://localhost:5173'], // Common development ports
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Cron-Secret'],
+  credentials: true, // Allow cookies and authentication headers
+  maxAge: 86400, // Cache preflight requests for 24 hours
+  optionsSuccessStatus: 204, // Return 204 for preflight requests
+};
+
+// Apply CORS middleware from cors package
+app.use(cors(corsOptions));
+
+// Apply our custom CORS middleware to ensure headers on all responses including errors
+app.use(corsMiddleware);
+
+// Log CORS configuration
+console.log(`CORS enabled with origins: ${JSON.stringify(corsOptions.origin)}`);
 
 // Define routes
 app.use('/api/auth', authRoutes);

@@ -16,6 +16,9 @@ import generationRoutes from './routes/generation.routes';
 import cronRoutes from './routes/cron.routes';
 import seoRoutes from './routes/seo.routes';
 
+// Import middleware
+import corsMiddleware from './middleware/cors.middleware';
+
 // Import DB connection
 import connectDB from './db/mongoose';
 
@@ -61,9 +64,6 @@ optionalEnvVars.forEach(envVar => {
 connectDB();
 
 const app: Express = express();
-
-// Import custom middleware
-import corsMiddleware from './middleware/cors.middleware';
 
 // Middleware
 app.use(express.json());

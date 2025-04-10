@@ -250,10 +250,50 @@ Sitemap: ${baseUrl}/sitemap.xml
         return res.status(404).json({ error: "Post not found" });
       }
       
-      res.json(post);
+      // Get the post with its comments
+      const postWithComments = await storage.getPostWithComments(slug);
+      
+      res.json(postWithComments);
     } catch (error) {
       console.error(`Error fetching post with slug ${req.params.slug}:`, error);
       res.status(500).json({ error: "Failed to fetch post" });
+    }
+  });
+  
+  // Comment routes
+  app.get("/api/posts/:slug/comments", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const comments = await storage.getCommentsBySlug(slug);
+      res.json(comments);
+    } catch (error) {
+      console.error(`Error fetching comments for post ${req.params.slug}:`, error);
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+  
+  app.post("/api/posts/:slug/comments", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const { content, authorName, authorEmail, parentId } = req.body;
+      
+      const post = await storage.getPostBySlug(slug);
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      const newComment = await storage.createComment({
+        content,
+        postId: post.id,
+        authorName,
+        authorEmail,
+        parentId: parentId || null,
+      });
+      
+      res.status(201).json(newComment);
+    } catch (error) {
+      console.error(`Error creating comment for post ${req.params.slug}:`, error);
+      res.status(500).json({ error: "Failed to create comment" });
     }
   });
 

@@ -7,6 +7,9 @@ import path from 'path';
 
 // Import routes
 import userRoutes from './routes/user.routes';
+import postRoutes from './routes/post.routes';
+import categoryRoutes from './routes/category.routes';
+import commentRoutes from './routes/comment.routes';
 
 // Import DB connection
 import connectDB from './db/mongoose';
@@ -27,6 +30,9 @@ app.use(cors());
 
 // Define routes
 app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Custom error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

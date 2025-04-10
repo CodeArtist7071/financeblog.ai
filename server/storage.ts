@@ -2,7 +2,10 @@ import {
   users, type User, type InsertUser,
   posts, type Post, type InsertPost,
   authors, type Author, type InsertAuthor,
-  type BlogPostWithAuthor
+  categories, type Category, type InsertCategory,
+  cryptoAssets, type CryptoAsset, type InsertCryptoAsset,
+  contentPrompts, type ContentPrompt, type InsertContentPrompt,
+  type BlogPostWithAuthor, type CryptoAssetWithCategory
 } from "@shared/schema";
 
 export interface IStorage {
@@ -13,30 +16,69 @@ export interface IStorage {
   
   // Post methods
   getPosts(): Promise<BlogPostWithAuthor[]>;
+  getPostsByCategory(categoryId: number): Promise<BlogPostWithAuthor[]>;
   getPostBySlug(slug: string): Promise<BlogPostWithAuthor | undefined>;
   createPost(post: InsertPost): Promise<Post>;
+  updatePost(id: number, post: Partial<InsertPost>): Promise<Post | undefined>;
+  deletePost(id: number): Promise<boolean>;
   
   // Author methods
   getAuthor(id: number): Promise<Author | undefined>;
   getAuthors(): Promise<Author[]>;
   createAuthor(author: InsertAuthor): Promise<Author>;
+  
+  // Category methods
+  getCategories(): Promise<Category[]>;
+  getCategory(id: number): Promise<Category | undefined>;
+  getCategoryBySlug(slug: string): Promise<Category | undefined>;
+  createCategory(category: InsertCategory): Promise<Category>;
+  
+  // Crypto Asset methods
+  getCryptoAssets(): Promise<CryptoAssetWithCategory[]>;
+  getCryptoAssetsByCategory(categoryId: number): Promise<CryptoAssetWithCategory[]>;
+  getCryptoAsset(id: number): Promise<CryptoAssetWithCategory | undefined>;
+  getCryptoAssetBySlug(slug: string): Promise<CryptoAssetWithCategory | undefined>;
+  createCryptoAsset(asset: InsertCryptoAsset): Promise<CryptoAsset>;
+  updateCryptoAsset(id: number, asset: Partial<InsertCryptoAsset>): Promise<CryptoAsset | undefined>;
+  
+  // Content Generation methods
+  getContentPrompts(): Promise<ContentPrompt[]>;
+  getContentPromptsByCategory(categoryId: number): Promise<ContentPrompt[]>;
+  getContentPrompt(id: number): Promise<ContentPrompt | undefined>;
+  createContentPrompt(prompt: InsertContentPrompt): Promise<ContentPrompt>;
+  updateContentPrompt(id: number, prompt: Partial<InsertContentPrompt>): Promise<ContentPrompt | undefined>;
+  recordPromptUsage(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private posts: Map<number, Post>;
   private authors: Map<number, Author>;
+  private categories: Map<number, Category>;
+  private cryptoAssets: Map<number, CryptoAsset>;
+  private contentPrompts: Map<number, ContentPrompt>;
+  
   private userIdCounter: number;
   private postIdCounter: number;
   private authorIdCounter: number;
+  private categoryIdCounter: number;
+  private cryptoAssetIdCounter: number;
+  private contentPromptIdCounter: number;
 
   constructor() {
     this.users = new Map();
     this.posts = new Map();
     this.authors = new Map();
+    this.categories = new Map();
+    this.cryptoAssets = new Map();
+    this.contentPrompts = new Map();
+    
     this.userIdCounter = 1;
     this.postIdCounter = 1;
     this.authorIdCounter = 1;
+    this.categoryIdCounter = 1;
+    this.cryptoAssetIdCounter = 1;
+    this.contentPromptIdCounter = 1;
     
     // Initialize with sample data
     this.initSampleData();
@@ -74,6 +116,26 @@ export class MemStorage implements IStorage {
     });
   }
   
+  async getPostsByCategory(categoryId: number): Promise<BlogPostWithAuthor[]> {
+    return Array.from(this.posts.values())
+      .filter(post => post.categoryId === categoryId)
+      .map(post => {
+        const author = this.authors.get(post.authorId);
+        if (!author) {
+          throw new Error(`Author not found for post ${post.id}`);
+        }
+        const category = this.categories.get(post.categoryId);
+        if (!category) {
+          throw new Error(`Category not found for post ${post.id}`);
+        }
+        return { ...post, author, category };
+      })
+      .sort((a, b) => {
+        // Sort by publishedAt in descending order (newest first)
+        return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+      });
+  }
+  
   async getPostBySlug(slug: string): Promise<BlogPostWithAuthor | undefined> {
     const post = Array.from(this.posts.values()).find(post => post.slug === slug);
     if (!post) return undefined;
@@ -81,7 +143,10 @@ export class MemStorage implements IStorage {
     const author = this.authors.get(post.authorId);
     if (!author) return undefined;
     
-    return { ...post, author };
+    const category = this.categories.get(post.categoryId);
+    if (!category) return undefined;
+    
+    return { ...post, author, category };
   }
   
   async createPost(insertPost: InsertPost): Promise<Post> {
@@ -89,6 +154,19 @@ export class MemStorage implements IStorage {
     const post: Post = { ...insertPost, id };
     this.posts.set(id, post);
     return post;
+  }
+  
+  async updatePost(id: number, postUpdate: Partial<InsertPost>): Promise<Post | undefined> {
+    const post = this.posts.get(id);
+    if (!post) return undefined;
+    
+    const updatedPost = { ...post, ...postUpdate };
+    this.posts.set(id, updatedPost);
+    return updatedPost;
+  }
+  
+  async deletePost(id: number): Promise<boolean> {
+    return this.posts.delete(id);
   }
   
   // Author methods

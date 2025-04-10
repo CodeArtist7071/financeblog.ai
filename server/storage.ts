@@ -67,6 +67,7 @@ export class MemStorage implements IStorage {
   private categories: Map<number, Category>;
   private cryptoAssets: Map<number, CryptoAsset>;
   private contentPrompts: Map<number, ContentPrompt>;
+  private comments: Map<number, Comment>;
   
   private userIdCounter: number;
   private postIdCounter: number;
@@ -74,6 +75,7 @@ export class MemStorage implements IStorage {
   private categoryIdCounter: number;
   private cryptoAssetIdCounter: number;
   private contentPromptIdCounter: number;
+  private commentIdCounter: number;
 
   constructor() {
     this.users = new Map();
@@ -82,6 +84,7 @@ export class MemStorage implements IStorage {
     this.categories = new Map();
     this.cryptoAssets = new Map();
     this.contentPrompts = new Map();
+    this.comments = new Map();
     
     this.userIdCounter = 1;
     this.postIdCounter = 1;
@@ -89,6 +92,7 @@ export class MemStorage implements IStorage {
     this.categoryIdCounter = 1;
     this.cryptoAssetIdCounter = 1;
     this.contentPromptIdCounter = 1;
+    this.commentIdCounter = 1;
     
     // Initialize with sample data
     this.initSampleData();

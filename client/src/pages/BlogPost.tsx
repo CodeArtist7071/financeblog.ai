@@ -14,8 +14,10 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BlogPostWithAuthor } from "@shared/schema";
+import { PostWithComments } from "@shared/schema";
 import { SEO } from "@/components/SEO";
+import { CommentForm } from "@/components/CommentForm";
+import { CommentList } from "@/components/CommentList";
 
 // Enhanced Markdown parser for finance content
 const parseMarkdown = (markdown: string) => {
@@ -111,7 +113,7 @@ const getBadgeVariant = (tag: string) => {
 const BlogPost = () => {
   const [match, params] = useRoute<{ slug: string }>("/posts/:slug");
   
-  const { data: post, isLoading, error } = useQuery<BlogPostWithAuthor>({
+  const { data: post, isLoading, error } = useQuery<PostWithComments>({
     queryKey: [`/api/posts/${params?.slug}`],
     enabled: !!params?.slug
   });
@@ -394,6 +396,29 @@ const BlogPost = () => {
             </div>
           </div>
         </article>
+        
+        {/* Comments Section */}
+        <div className="mt-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-6 md:p-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+              <MessageSquare className="h-5 w-5 mr-2 text-primary" />
+              Comments
+            </h2>
+            
+            {/* Comment list */}
+            <div className="mb-8">
+              <CommentList 
+                comments={post.comments || []} 
+                postSlug={post.slug} 
+              />
+            </div>
+            
+            {/* Add comment form */}
+            <div>
+              <CommentForm postSlug={post.slug} />
+            </div>
+          </div>
+        </div>
         
         {/* Back to articles */}
         <div className="mt-8 flex justify-center">

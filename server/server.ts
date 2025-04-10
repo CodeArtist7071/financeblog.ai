@@ -13,6 +13,7 @@ import categoryRoutes from './routes/category.routes';
 import commentRoutes from './routes/comment.routes';
 import topicRoutes from './routes/topic.routes';
 import generationRoutes from './routes/generation.routes';
+import cronRoutes from './routes/cron.routes';
 import seoRoutes from './routes/seo.routes';
 
 // Import DB connection
@@ -40,6 +41,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/topics', topicRoutes);
 app.use('/api/generation', generationRoutes);
+app.use('/cron', cronRoutes); // Cron endpoint for scheduled tasks
 
 // SEO routes - these are outside the /api path for direct access
 app.use('/', seoRoutes);

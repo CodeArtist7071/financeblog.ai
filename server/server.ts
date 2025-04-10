@@ -19,8 +19,43 @@ import seoRoutes from './routes/seo.routes';
 // Import DB connection
 import connectDB from './db/mongoose';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables with proper error handling
+const envResult = dotenv.config();
+if (envResult.error) {
+  console.error('Error loading .env file:', envResult.error);
+  process.exit(1);
+}
+
+// Validate required environment variables
+const requiredEnvVars = [
+  'MONGODB_URI',
+  'JWT_SECRET',
+  'JWT_EXPIRE'
+];
+
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+  console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  console.error('Please check your .env file or environment configuration.');
+  // Don't exit - allow app to potentially run with defaults
+}
+
+// Log optional environment variables status
+const optionalEnvVars = [
+  'OPENAI_API_KEY',
+  'CRON_SECRET'
+];
+
+optionalEnvVars.forEach(envVar => {
+  if (!process.env[envVar]) {
+    console.warn(`Warning: Optional environment variable ${envVar} is not set.`);
+    if (envVar === 'OPENAI_API_KEY') {
+      console.warn('OpenAI content generation features will not be available.');
+    } else if (envVar === 'CRON_SECRET') {
+      console.warn('Cron job API endpoints will not be secure without a CRON_SECRET.');
+    }
+  }
+});
 
 // Connect to MongoDB
 connectDB();

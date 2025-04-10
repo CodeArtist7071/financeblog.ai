@@ -3,17 +3,42 @@ import { Post } from '../models/post.model';
 import { Comment } from '../models/comment.model';
 import mongoose from 'mongoose';
 
-// @desc    Get all posts
+// @desc    Get all posts with pagination and filtering
 // @route   GET /api/posts
 // @access  Public
 export const getPosts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const posts = await Post.find({})
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const categoryId = req.query.categoryId as string;
+    const skip = (page - 1) * limit;
+    
+    // Build filter object
+    const filter: any = {};
+    if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
+      filter.categoryId = categoryId;
+    }
+    
+    // Get total count for pagination
+    const total = await Post.countDocuments(filter);
+    
+    // Get posts with pagination and filter
+    const posts = await Post.find(filter)
       .populate('authorId', '-password')
       .populate('categoryId')
-      .sort({ publishedAt: -1 });
+      .sort({ publishedAt: -1 })
+      .skip(skip)
+      .limit(limit);
     
-    res.json(posts);
+    res.json({
+      posts,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     if (error instanceof Error) {
       res.status(500).json({ error: error.message });
@@ -77,24 +102,41 @@ export const getPostBySlug = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// @desc    Get posts by category
+// @desc    Get posts by category with pagination
 // @route   GET /api/categories/:categoryId/posts
 // @access  Public
 export const getPostsByCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const { categoryId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
     
     if (!mongoose.Types.ObjectId.isValid(categoryId)) {
       res.status(400).json({ error: 'Invalid category ID' });
       return;
     }
     
+    // Get total count for pagination
+    const total = await Post.countDocuments({ categoryId });
+    
+    // Get posts with pagination
     const posts = await Post.find({ categoryId })
       .populate('authorId', '-password')
       .populate('categoryId')
-      .sort({ publishedAt: -1 });
+      .sort({ publishedAt: -1 })
+      .skip(skip)
+      .limit(limit);
     
-    res.json(posts);
+    res.json({
+      posts,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     if (error instanceof Error) {
       res.status(500).json({ error: error.message });

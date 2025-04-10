@@ -1406,6 +1406,75 @@ As your API grows, consider adding features like rate limiting, caching, and com
       tags: ["Express", "Node.js"]
     };
     this.posts.set(post4.id, post4);
+    
+    // Create some sample comments for testing
+    const bitcoinComment1: Comment = {
+      id: ++this.commentIdCounter,
+      content: "Great analysis! I particularly appreciate the technical breakdown of support and resistance levels. Do you think Bitcoin will reach $100k by the end of the year?",
+      postId: bitcoinAnalysisPost.id,
+      authorName: "Crypto Enthusiast",
+      authorEmail: "crypto@example.com",
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
+      isApproved: true,
+      parentId: null,
+      userId: null,
+    };
+    this.comments.set(bitcoinComment1.id, bitcoinComment1);
+    
+    const bitcoinComment2: Comment = {
+      id: ++this.commentIdCounter,
+      content: "I disagree with your analysis. The macroeconomic factors like rising interest rates will likely push Bitcoin lower in the short term. We need to be cautious.",
+      postId: bitcoinAnalysisPost.id,
+      authorName: "Market Skeptic",
+      authorEmail: "skeptic@example.com",
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
+      isApproved: true,
+      parentId: null,
+      userId: null,
+    };
+    this.comments.set(bitcoinComment2.id, bitcoinComment2);
+    
+    // A reply to the first comment
+    const bitcoinComment3: Comment = {
+      id: ++this.commentIdCounter,
+      content: "I think $100k is realistic but probably not until next year. There's still a lot of regulatory uncertainty that needs to be resolved first.",
+      postId: bitcoinAnalysisPost.id,
+      authorName: "Alex Johnson",
+      authorEmail: "alex@example.com",
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1), // 1 day ago
+      isApproved: true,
+      parentId: bitcoinComment1.id,
+      userId: null,
+    };
+    this.comments.set(bitcoinComment3.id, bitcoinComment3);
+    
+    // An unapproved comment for testing admin approval
+    const bitcoinComment4: Comment = {
+      id: ++this.commentIdCounter,
+      content: "This is a pending comment that needs approval. It should only be visible to admins until approved.",
+      postId: bitcoinAnalysisPost.id,
+      authorName: "Waiting User",
+      authorEmail: "waiting@example.com",
+      createdAt: new Date(),
+      isApproved: false,
+      parentId: null,
+      userId: null,
+    };
+    this.comments.set(bitcoinComment4.id, bitcoinComment4);
+    
+    // Comment on the Ethereum post
+    const ethereumComment1: Comment = {
+      id: ++this.commentIdCounter,
+      content: "I'm really excited about Ethereum 2.0 and the move to proof-of-stake. This should address a lot of the environmental concerns around crypto.",
+      postId: ethereumPost.id,
+      authorName: "ETH Developer",
+      authorEmail: "dev@example.com",
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4), // 4 days ago
+      isApproved: true,
+      parentId: null,
+      userId: null,
+    };
+    this.comments.set(ethereumComment1.id, ethereumComment1);
   }
 }
 

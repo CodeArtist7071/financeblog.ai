@@ -30,10 +30,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const validatedData = loginSchema.parse(req.body);
       
-      // Find user by email
-      const user = await storage.getUserByUsername(validatedData.email);
+      // The issue is here - we're using getUserByUsername with an email value
+      // Find user by email - use proper lookup method
+      // Since we're using email for login, we need to ensure we're querying correctly
+      console.log("Looking up user with email:", validatedData.email);
+      const users = await storage.getUsers();
+      const user = users.find(u => u.email === validatedData.email);
       
       if (!user) {
+        console.log("User not found with email:", validatedData.email);
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
@@ -41,6 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const passwordValid = await comparePassword(validatedData.password, user.password);
       
       if (!passwordValid) {
+        console.log("Password invalid for user:", user.username);
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
@@ -59,7 +65,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...userWithoutPassword } = user;
       res.status(200).json({ 
         user: userWithoutPassword,
-        token // Also send token in response body for clients that don't use cookies
+        token, // Also send token in response body for clients that don't use cookies
+        success: true
       });
       
     } catch (error) {
@@ -75,8 +82,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Register new admin (requires admin privileges)
-  app.post("/api/auth/register", authenticate, requireAdmin, async (req: Request, res: Response) => {
+  // Regular user registration
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
       // Validate request body
       const validatedData = registerSchema.parse(req.body);
@@ -96,13 +103,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: validatedData.username,
         email: validatedData.email,
         password: hashedPassword,
-        isAdmin: true // All registered users through this route are admins
+        isAdmin: false // Regular users are not admins by default
+      });
+      
+      // Generate token for the new user
+      const token = generateToken(newUser);
+      
+      // Set cookie with the token
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Secure in production
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: "strict"
       });
       
       // Remove password from response
       const { password, ...userWithoutPassword } = newUser;
       
-      res.status(201).json(userWithoutPassword);
+      res.status(201).json({
+        user: userWithoutPassword,
+        token,
+        success: true
+      });
       
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -113,6 +135,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.error("Registration error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
+  // Register new admin (requires admin privileges)
+  app.post("/api/auth/register-admin", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      // Validate request body
+      const validatedData = registerSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(validatedData.email);
+      
+      if (existingUser) {
+        return res.status(409).json({ error: "User with this email already exists" });
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(validatedData.password);
+      
+      // Create new admin user
+      const newUser = await storage.createUser({
+        username: validatedData.username,
+        email: validatedData.email,
+        password: hashedPassword,
+        isAdmin: true // All registered users through this route are admins
+      });
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = newUser;
+      
+      res.status(201).json({
+        user: userWithoutPassword,
+        success: true
+      });
+      
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Validation failed", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Admin registration error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

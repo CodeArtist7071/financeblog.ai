@@ -335,6 +335,82 @@ export class MemStorage implements IStorage {
     this.contentPrompts.set(id, prompt);
   }
   
+  // Comment methods
+  async getPostWithComments(slug: string): Promise<PostWithComments | undefined> {
+    const post = await this.getPostBySlug(slug);
+    if (!post) return undefined;
+    
+    const comments = await this.getCommentsBySlug(slug);
+    
+    return {
+      ...post,
+      comments,
+    };
+  }
+  
+  async getComments(postId: number): Promise<Comment[]> {
+    return Array.from(this.comments.values())
+      .filter(comment => comment.postId === postId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+  
+  async getCommentsBySlug(slug: string): Promise<CommentWithReplies[]> {
+    const post = await this.getPostBySlug(slug);
+    if (!post) return [];
+    
+    const comments = await this.getComments(post.id);
+    
+    // Filter top-level comments (those without a parentId)
+    const topLevelComments = comments.filter(comment => !comment.parentId && comment.isApproved);
+    
+    // Build comment hierarchy with replies
+    return topLevelComments.map(comment => this.buildCommentTree(comment, comments));
+  }
+  
+  private buildCommentTree(comment: Comment, allComments: Comment[]): CommentWithReplies {
+    const replies = allComments
+      .filter(c => c.parentId === comment.id && c.isApproved)
+      .map(reply => this.buildCommentTree(reply, allComments));
+    
+    return {
+      ...comment,
+      replies: replies.length > 0 ? replies : undefined,
+    };
+  }
+  
+  async createComment(insertComment: InsertComment): Promise<Comment> {
+    const id = ++this.commentIdCounter;
+    const now = new Date();
+    
+    const comment: Comment = {
+      id,
+      content: insertComment.content,
+      postId: insertComment.postId,
+      authorName: insertComment.authorName,
+      authorEmail: insertComment.authorEmail,
+      createdAt: now,
+      isApproved: false, // Comments must be approved by default
+      parentId: insertComment.parentId || null,
+      userId: null,
+    };
+    
+    this.comments.set(id, comment);
+    return comment;
+  }
+  
+  async approveComment(id: number): Promise<Comment | undefined> {
+    const comment = this.comments.get(id);
+    if (!comment) return undefined;
+    
+    const updatedComment = { ...comment, isApproved: true };
+    this.comments.set(id, updatedComment);
+    return updatedComment;
+  }
+  
+  async deleteComment(id: number): Promise<boolean> {
+    return this.comments.delete(id);
+  }
+  
   // Initialize with sample data
   private initSampleData() {
     // Create sample finance/crypto categories

@@ -7,6 +7,7 @@ import { getQueryFn } from "@/lib/queryClient";
 import { Post, Author, Category } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 import { CreateTopicForm } from "@/components/admin/CreateTopicForm";
+import { CommentsManager } from "@/components/admin/CommentsManager";
 
 export default function AdminDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -111,12 +112,7 @@ export default function AdminDashboard() {
         </TabsContent>
         
         <TabsContent value="comments" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-xl font-semibold mb-4">Recent Comments</h2>
-              <p>Comment moderation system coming soon.</p>
-            </CardContent>
-          </Card>
+          <CommentsManager />
         </TabsContent>
         
         <TabsContent value="analytics" className="space-y-4">

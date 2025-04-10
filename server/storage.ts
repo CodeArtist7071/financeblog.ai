@@ -413,6 +413,8 @@ export class MemStorage implements IStorage {
   
   // Initialize with sample data
   private initSampleData() {
+    // Initialize comment counter
+    this.commentIdCounter = 0;
     // Create sample finance/crypto categories
     const cryptocurrencyCategory: Category = {
       id: this.categoryIdCounter++,

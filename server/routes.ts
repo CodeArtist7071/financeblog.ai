@@ -296,6 +296,79 @@ Sitemap: ${baseUrl}/sitemap.xml
       res.status(500).json({ error: "Failed to create comment" });
     }
   });
+  
+  // Admin routes for comment management (protected by authentication)
+  app.patch("/api/comments/:id/approve", authenticate, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const commentId = parseInt(id, 10);
+      
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+      
+      const updatedComment = await storage.approveComment(commentId);
+      
+      if (!updatedComment) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      
+      res.json(updatedComment);
+    } catch (error) {
+      console.error(`Error approving comment ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to approve comment" });
+    }
+  });
+  
+  app.delete("/api/comments/:id", authenticate, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const commentId = parseInt(id, 10);
+      
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+      
+      const success = await storage.deleteComment(commentId);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error(`Error deleting comment ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+  
+  // Get pending comments (for admin review)
+  app.get("/api/comments/pending", authenticate, requireAdmin, async (req, res) => {
+    try {
+      // Get all comments
+      const allComments = [];
+      const posts = await storage.getPosts();
+      
+      // For each post, get its comments
+      for (const post of posts) {
+        const comments = await storage.getComments(post.id);
+        const pendingComments = comments.filter(comment => !comment.isApproved);
+        
+        if (pendingComments.length > 0) {
+          allComments.push(...pendingComments.map(comment => ({
+            ...comment,
+            postTitle: post.title,
+            postSlug: post.slug,
+          })));
+        }
+      }
+      
+      res.json(allComments);
+    } catch (error) {
+      console.error("Error fetching pending comments:", error);
+      res.status(500).json({ error: "Failed to fetch pending comments" });
+    }
+  });
 
   app.get("/api/authors", async (req, res) => {
     try {

@@ -33,6 +33,12 @@ const Home = () => {
 
   return (
     <div className="bg-gradient-to-b from-white to-gray-50">
+      {/* SEO tags for the homepage */}
+      <SEO
+        title="Finance & Crypto Blog - Latest Market Insights and Investment Strategies"
+        description="Expert analysis on cryptocurrency, blockchain, stock markets, forex trading, and personal finance. Get the latest insights for smarter investing."
+        image={featuredPost?.coverImage}
+      />
       {/* Hero section */}
       <section className="relative py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

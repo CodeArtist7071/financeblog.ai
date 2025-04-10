@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -56,6 +57,10 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
+      <SEO 
+        title="Admin Login - Finance & Crypto Blog"
+        description="Access the admin dashboard to manage content, moderate comments, and generate AI-powered financial articles."
+      />
       {/* Form Section (Left) */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-8">
         <Card className="w-full max-w-md">

@@ -11,6 +11,8 @@ import postRoutes from './routes/post.routes';
 import categoryRoutes from './routes/category.routes';
 import commentRoutes from './routes/comment.routes';
 import topicRoutes from './routes/topic.routes';
+import generationRoutes from './routes/generation.routes';
+import seoRoutes from './routes/seo.routes';
 
 // Import DB connection
 import connectDB from './db/mongoose';
@@ -35,6 +37,10 @@ app.use('/api/posts', postRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/topics', topicRoutes);
+app.use('/api/generation', generationRoutes);
+
+// SEO routes - these are outside the /api path for direct access
+app.use('/', seoRoutes);
 
 // Custom error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

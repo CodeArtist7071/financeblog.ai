@@ -167,6 +167,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+  // SEO routes for sitemap.xml and robots.txt
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const posts = await storage.getPosts();
+      const categories = await storage.getCategories();
+      
+      // Start XML creation
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+      
+      // Add homepage
+      xml += `  <url>\n`;
+      xml += `    <loc>${baseUrl}/</loc>\n`;
+      xml += `    <changefreq>daily</changefreq>\n`;
+      xml += `    <priority>1.0</priority>\n`;
+      xml += `  </url>\n`;
+      
+      // Add all blog posts
+      for (const post of posts) {
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}/posts/${post.slug}</loc>\n`;
+        xml += `    <lastmod>${new Date(post.publishedAt).toISOString()}</lastmod>\n`;
+        xml += `    <changefreq>monthly</changefreq>\n`;
+        xml += `    <priority>0.8</priority>\n`;
+        xml += `  </url>\n`;
+      }
+      
+      // Add all category pages
+      for (const category of categories) {
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}/category/${category.slug}</loc>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.7</priority>\n`;
+        xml += `  </url>\n`;
+      }
+      
+      // Close XML
+      xml += '</urlset>';
+      
+      // Send response
+      res.header('Content-Type', 'application/xml');
+      res.send(xml);
+    } catch (error) {
+      console.error("Error generating sitemap:", error);
+      res.status(500).json({ error: "Failed to generate sitemap" });
+    }
+  });
+
+  app.get("/robots.txt", (req, res) => {
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const robotsTxt = `# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: ${baseUrl}/sitemap.xml
+`;
+    
+    res.header('Content-Type', 'text/plain');
+    res.send(robotsTxt);
+  });
+
   // API routes for blog
   app.get("/api/posts", async (req, res) => {
     try {

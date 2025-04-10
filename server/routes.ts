@@ -6,6 +6,11 @@ import { comparePassword, generateToken, hashPassword } from "./lib/auth";
 import { authenticate, requireAdmin } from "./middleware/auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add a route to check if the OpenAI API key is configured
+  app.get('/api/check-openai-key', (req: Request, res: Response) => {
+    const apiKey = process.env.OPENAI_API_KEY;
+    res.json({ configured: !!apiKey });
+  });
   // Authentication routes
   // Validation schemas
   const loginSchema = z.object({

@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { comparePassword, generateToken, hashPassword } from "./lib/auth";
 import { authenticate, requireAdmin } from "./middleware/auth";
+import { getAnalytics } from "./controllers/analytics.controller";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add a route to check if the OpenAI API key is configured

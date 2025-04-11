@@ -17,12 +17,13 @@ export default function AuthPage() {
   
   // Form states
   const [loginData, setLoginData] = useState({
-    username: "",
+    username: "", // Will be used as email in the API
     password: "",
   });
   
   const [registerData, setRegisterData] = useState({
     username: "",
+    email: "", // Will be updated to match username
     password: "",
     confirmPassword: "",
   });
@@ -53,10 +54,21 @@ export default function AuthPage() {
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!registerData.username || !registerData.password || !registerData.confirmPassword) {
+    if (!registerData.username || !registerData.email || !registerData.password || !registerData.confirmPassword) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(registerData.email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
         variant: "destructive",
       });
       return;
@@ -71,9 +83,11 @@ export default function AuthPage() {
       return;
     }
     
+    // Use the actual email field
     registerMutation.mutate({
       username: registerData.username,
       password: registerData.password,
+      email: registerData.email
     });
   };
 
@@ -164,7 +178,22 @@ export default function AuthPage() {
                       type="text"
                       placeholder="Choose a username"
                       value={registerData.username}
-                      onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
+                      onChange={(e) => setRegisterData({ 
+                        ...registerData, 
+                        username: e.target.value,
+                        // Update email to match username for simplicity
+                        email: e.target.value 
+                      })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={registerData.email}
+                      onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">

@@ -24,6 +24,7 @@ type LoginData = {
 
 type RegisterData = {
   username: string;
+  email: string;
   password: string;
 };
 
@@ -60,9 +61,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error) => {
+      console.error("Login error:", error);
+      
+      // Provide more helpful error messages based on common issues
+      let errorMessage = "Invalid credentials";
+      
+      if (error.message) {
+        if (error.message.includes("401")) {
+          errorMessage = "Invalid username or password";
+        } else if (error.message.includes("404")) {
+          errorMessage = "Account not found";
+        } else if (error.message.includes("network") || error.message.includes("failed to fetch")) {
+          errorMessage = "Network error - please check your connection";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Login failed",
-        description: error.message || "Invalid credentials",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -72,23 +90,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (userData) => {
       const res = await apiRequest("POST", "/api/auth/register", {
         username: userData.username,
-        email: userData.username, // Using username as email 
+        email: userData.email,
         password: userData.password
       });
       const data = await res.json();
       return data.user;
     },
     onSuccess: (user) => {
-      queryClient.setQueryData(["/api/auth/me"], user);
+      queryClient.setQueryData(["/api/auth/me"], { user });
       toast({
         title: "Registration successful",
         description: `Welcome, ${user.username}!`,
       });
     },
     onError: (error) => {
+      console.error("Registration error:", error);
+      
+      // Provide more helpful error messages based on common issues
+      let errorMessage = "Could not create account";
+      
+      if (error.message) {
+        if (error.message.includes("409")) {
+          errorMessage = "This email is already registered";
+        } else if (error.message.includes("400")) {
+          errorMessage = "Invalid registration data";
+        } else if (error.message.includes("network") || error.message.includes("failed to fetch")) {
+          errorMessage = "Network error - please check your connection";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Registration failed",
-        description: error.message || "Could not create account",
+        description: errorMessage,
         variant: "destructive",
       });
     },

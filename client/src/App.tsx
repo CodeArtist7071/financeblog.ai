@@ -10,6 +10,7 @@ import BlogPost from "./pages/BlogPost";
 import AuthPage from "./pages/auth-page";
 import NotFound from "./pages/not-found";
 import Dashboard from "./pages/admin/dashboard";
+import Analytics from "./pages/admin/analytics";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { SEO } from "./components/SEO";
 
@@ -26,6 +27,9 @@ function App() {
               <Route path="/auth" component={AuthPage} />
               <ProtectedRoute path="/admin/dashboard" adminOnly>
                 <Route path="/admin/dashboard" component={Dashboard} />
+              </ProtectedRoute>
+              <ProtectedRoute path="/admin/analytics" adminOnly>
+                <Route path="/admin/analytics" component={Analytics} />
               </ProtectedRoute>
               <Route component={NotFound} />
             </Switch>

@@ -12,9 +12,9 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<{user: User, token: string}, Error, LoginData>;
+  loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  isAdmin: boolean;
+  registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
 
 type LoginData = {
@@ -22,39 +22,63 @@ type LoginData = {
   password: string;
 };
 
+type RegisterData = LoginData & {
+  username: string;
+};
+
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  
   const {
-    data: userData,
+    data: user,
     error,
     isLoading,
-  } = useQuery<{user: User} | undefined, Error>({
+  } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  const user = userData?.user || null;
-  const isAdmin = !!user?.isAdmin;
-
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/auth/login", credentials);
-      return await res.json();
+      const result = await res.json();
+      return result.user;
     },
-    onSuccess: (data: {user: User, token: string}) => {
-      queryClient.setQueryData(["/api/auth/me"], { user: data.user });
-      
+    onSuccess: (user: User) => {
+      queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Login successful",
-        description: "Welcome back!",
+        description: `Welcome back, ${user.username}!`,
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: error.message || "Invalid credentials",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (userData: RegisterData) => {
+      const res = await apiRequest("POST", "/api/auth/register", userData);
+      const result = await res.json();
+      return result.user;
+    },
+    onSuccess: (user: User) => {
+      queryClient.setQueryData(["/api/auth/me"], user);
+      toast({
+        title: "Registration successful",
+        description: `Welcome, ${user.username}!`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Registration failed",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -68,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/auth/me"], null);
       toast({
         title: "Logged out",
-        description: "You have been logged out successfully",
+        description: "You've been successfully logged out.",
       });
     },
     onError: (error: Error) => {
@@ -83,12 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: user || null,
         isLoading,
         error,
         loginMutation,
         logoutMutation,
-        isAdmin,
+        registerMutation,
       }}
     >
       {children}

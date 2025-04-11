@@ -1,42 +1,36 @@
-import { ReactNode } from "react";
-import { Route, Redirect } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import { Redirect, Route, RouteProps } from "wouter";
 
-interface ProtectedRouteProps {
-  path: string;
+type ProtectedRouteProps = RouteProps & {
   adminOnly?: boolean;
-  children: ReactNode;
-}
+};
 
-export function ProtectedRoute({ path, adminOnly = false, children }: ProtectedRouteProps) {
-  const { user, isLoading, isAdmin } = useAuth();
+export function ProtectedRoute({
+  path,
+  adminOnly = false,
+  children,
+  ...rest
+}: ProtectedRouteProps) {
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Route>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary/70" />
+      </div>
     );
   }
 
+  // If not authenticated, redirect to login
   if (!user) {
-    return (
-      <Route path={path}>
-        <Redirect to="/auth" />
-      </Route>
-    );
+    return <Redirect to="/auth" />;
   }
 
-  if (adminOnly && !isAdmin) {
-    return (
-      <Route path={path}>
-        <Redirect to="/" />
-      </Route>
-    );
+  // If admin only and user is not an admin, redirect to home
+  if (adminOnly && !user.isAdmin) {
+    return <Redirect to="/" />;
   }
 
-  return <Route path={path}>{children}</Route>;
+  return <Route path={path} {...rest}>{children}</Route>;
 }

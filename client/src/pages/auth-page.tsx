@@ -47,6 +47,17 @@ export default function AuthPage() {
       return;
     }
     
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(loginData.username)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     loginMutation.mutate(loginData);
   };
 
@@ -124,11 +135,11 @@ export default function AuthPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="username">Email</Label>
                     <Input
                       id="username"
-                      type="text"
-                      placeholder="Enter your username"
+                      type="email"
+                      placeholder="Enter your email"
                       value={loginData.username}
                       onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                     />

@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -18,73 +18,83 @@ type AuthContextType = {
 };
 
 type LoginData = {
-  email: string;
+  username: string;
   password: string;
 };
 
-type RegisterData = LoginData & {
+type RegisterData = {
   username: string;
+  password: string;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  
   const {
-    data: user,
+    data: userData,
     error,
     isLoading,
-  } = useQuery<User | null>({
+  } = useQuery<{user: User} | null, Error>({
     queryKey: ["/api/auth/me"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/auth/login", credentials);
-      const result = await res.json();
-      return result.user;
+  // The API returns { user: User } so we need to extract the user
+  const user = userData?.user;
+
+  const loginMutation = useMutation<User, Error, LoginData>({
+    mutationFn: async (credentials) => {
+      const res = await apiRequest("POST", "/api/auth/login", {
+        email: credentials.username, // API expects email
+        password: credentials.password
+      });
+      const data = await res.json();
+      return data.user;
     },
-    onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/auth/me"], user);
+    onSuccess: (user) => {
+      queryClient.setQueryData(["/api/auth/me"], { user });
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Login failed",
-        description: error.message,
+        description: error.message || "Invalid credentials",
         variant: "destructive",
       });
     },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest("POST", "/api/auth/register", userData);
-      const result = await res.json();
-      return result.user;
+  const registerMutation = useMutation<User, Error, RegisterData>({
+    mutationFn: async (userData) => {
+      const res = await apiRequest("POST", "/api/auth/register", {
+        username: userData.username,
+        email: userData.username, // Using username as email 
+        password: userData.password
+      });
+      const data = await res.json();
+      return data.user;
     },
-    onSuccess: (user: User) => {
+    onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Registration successful",
         description: `Welcome, ${user.username}!`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: error.message || "Could not create account",
         variant: "destructive",
       });
     },
   });
 
-  const logoutMutation = useMutation({
+  const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
       await apiRequest("POST", "/api/auth/logout");
     },
@@ -92,10 +102,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/auth/me"], null);
       toast({
         title: "Logged out",
-        description: "You've been successfully logged out.",
+        description: "You have been logged out successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Logout failed",
         description: error.message,

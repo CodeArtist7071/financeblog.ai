@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Bitcoin, Coins, DollarSign, TrendingUp, Sun, Moon, Menu, X } from "lucide-react";
+import { Bitcoin, Coins, DollarSign, TrendingUp, Sun, Moon, Menu, X, ChevronDown, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
-const Header = () => {
+interface HeaderProps {
+  scrolled?: boolean;
+}
+
+const Header = ({ scrolled = false }: HeaderProps) => {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth?.() || {};
 
   // Initialize theme from system preference or localStorage
   useEffect(() => {
@@ -53,26 +59,35 @@ const Header = () => {
   ];
 
   return (
-    <header className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-10 transition-colors duration-200">
+    <header 
+      className={`sticky top-0 z-30 w-full transition-all duration-300 ${
+        scrolled 
+          ? "bg-background/80 backdrop-blur-md shadow-md" 
+          : "bg-background"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center">
-              <Coins className="h-8 w-8 text-primary" />
-              <span className="ml-2 text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            <Link href="/" className="flex-shrink-0 flex items-center group">
+              <div className="relative flex items-center justify-center p-1">
+                <div className="absolute inset-0 bg-primary/10 rounded-full group-hover:scale-110 transition-all duration-300"></div>
+                <Coins className="h-8 w-8 text-primary relative z-10" />
+              </div>
+              <span className="ml-2 text-xl font-bold text-gradient">
                 FinancePulse
               </span>
             </Link>
-            <nav className="hidden md:ml-8 md:flex md:space-x-6">
+            <nav className="hidden md:ml-8 md:flex md:space-x-1">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
                   href={item.path}
-                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                  className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
                     location === item.path
-                      ? "bg-primary/10 text-primary dark:bg-primary/20"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-                  } transition-colors duration-150`}
+                      ? "bg-primary-50 text-primary dark:bg-primary/20"
+                      : "text-foreground/80 hover:bg-muted hover:text-foreground"
+                  } transition-all duration-150 ease-in-out`}
                 >
                   {item.icon}
                   {item.name}
@@ -81,27 +96,53 @@ const Header = () => {
             </nav>
           </div>
           
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            {user ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden md:flex items-center text-foreground/80 hover:text-foreground"
+              >
+                <User className="h-4 w-4 mr-1" />
+                {user.username || "Account"}
+                <ChevronDown className="h-3 w-3 ml-1" />
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden md:inline-flex"
+                asChild
+              >
+                <Link href="/auth">Sign In</Link>
+              </Button>
+            )}
+            
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="mr-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              className="text-foreground/70 hover:text-foreground hover:bg-muted"
               aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
             >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {isDarkMode ? (
+                <Sun className="h-[18px] w-[18px] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              ) : (
+                <Moon className="absolute h-[18px] w-[18px] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              )}
+              <span className="sr-only">Toggle theme</span>
             </Button>
             
-            <div className="-mr-2 flex md:hidden">
+            <div className="flex md:hidden">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleMobileMenu}
-                className="inline-flex items-center justify-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                className="text-foreground/70 hover:text-foreground hover:bg-muted"
                 aria-expanded={mobileMenuOpen ? "true" : "false"}
               >
                 <span className="sr-only">{mobileMenuOpen ? "Close main menu" : "Open main menu"}</span>
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
           </div>
@@ -109,23 +150,43 @@ const Header = () => {
       </div>
 
       {/* Mobile menu */}
-      <div className={`md:hidden ${mobileMenuOpen ? "" : "hidden"}`} id="mobile-menu">
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 dark:bg-gray-900 transition-colors duration-200">
+      <div 
+        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          mobileMenuOpen ? "max-h-96" : "max-h-0"
+        }`} 
+        id="mobile-menu"
+      >
+        <div className="px-4 py-2 space-y-1 bg-background border-t border-border/30">
           {navItems.map((item) => (
             <Link
               key={item.name}
               href={item.path}
               className={`${
                 location === item.path
-                  ? "bg-primary/10 text-primary dark:bg-primary/20"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-              } block px-3 py-2 rounded-md text-base font-medium flex items-center`}
+                  ? "bg-primary-50 text-primary dark:bg-primary/20"
+                  : "text-foreground/80 hover:bg-muted hover:text-foreground"
+              } flex items-center px-3 py-2 rounded-md text-sm font-medium w-full`}
               onClick={() => setMobileMenuOpen(false)}
             >
               {item.icon}
               {item.name}
             </Link>
           ))}
+          {!user && (
+            <Link
+              href="/auth"
+              className="w-full mt-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+              >
+                Sign In
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

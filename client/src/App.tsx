@@ -27,12 +27,8 @@ function App() {
               <Route path="/" component={Home} />
               <Route path="/posts/:slug" component={BlogPost} />
               <Route path="/auth" component={AuthPage} />
-              <ProtectedRoute path="/admin/dashboard" adminOnly>
-                <Route path="/admin/dashboard" component={Dashboard} />
-              </ProtectedRoute>
-              <ProtectedRoute path="/admin/analytics" adminOnly>
-                <Route path="/admin/analytics" component={Analytics} />
-              </ProtectedRoute>
+              <ProtectedRoute path="/admin/dashboard" component={Dashboard} adminOnly />
+              <ProtectedRoute path="/admin/analytics" component={Analytics} adminOnly />
               <Route component={NotFound} />
             </Switch>
           </MainLayout>

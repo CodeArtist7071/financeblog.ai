@@ -21,7 +21,6 @@ import {
 } from "recharts";
 import { Loader2, TrendingUp, TrendingDown, Activity, User, FileText, Eye, MessageSquare, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import AdminLayout from "@/layouts/AdminLayout";
 
 // Analytics data types
 interface AnalyticsData {
@@ -80,10 +79,7 @@ export default function Analytics() {
   const data = analyticsData || getSampleData(timeRange);
 
   return (
-    <AdminLayout 
-      title="Analytics Dashboard"
-      description="View statistics and metrics for your finance and crypto blog"
-    >
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center">
@@ -338,7 +334,7 @@ export default function Analytics() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </div>
   );
 }
 

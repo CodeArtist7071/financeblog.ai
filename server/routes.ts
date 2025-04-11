@@ -303,6 +303,9 @@ Sitemap: ${baseUrl}/sitemap.xml
     res.send(robotsTxt);
   });
 
+  // Admin analytics route (protected by authentication)
+  app.get("/api/admin/analytics", authenticate, requireAdmin, getAnalytics);
+
   // API routes for blog
   app.get("/api/posts", async (req, res) => {
     try {

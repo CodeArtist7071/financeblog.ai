@@ -50,7 +50,7 @@ export default function Analytics() {
   // Fetch analytics data
   const { data: analyticsData, isLoading, error } = useQuery<AnalyticsData>({
     queryKey: ["/api/admin/analytics", timeRange],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Handle loading and error states
@@ -350,7 +350,7 @@ function MetricCard({ title, value, trend, trendValue, icon }: MetricCardProps) 
                 <TrendingDown className="mr-1 h-4 w-4 text-rose-500" />
               )}
               <span className={trend === "up" ? "text-emerald-500" : "text-rose-500"}>
-                {trend === "up" ? "+" : "-"}{trendValue} since last {timeRangeToText("week")}
+                {trend === "up" ? "+" : "-"}{trendValue} since last week
               </span>
             </div>
           </div>

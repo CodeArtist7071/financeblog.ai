@@ -45,7 +45,7 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
     }
 
     // Filter posts and comments by date range
-    const postsInRange = posts.filter(post => new Date(post.createdAt) >= startDate);
+    const postsInRange = posts.filter(post => new Date(post.publishedAt) >= startDate);
     const commentsInRange = allComments.filter(comment => new Date(comment.createdAt) >= startDate);
 
     // Calculate previous period for growth comparison

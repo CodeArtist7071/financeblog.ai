@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,9 +19,9 @@ import {
   Tooltip, 
   Legend 
 } from "recharts";
-import { Loader2, TrendingUp, TrendingDown, Activity, User, FileText, Eye, MessageSquare } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Activity, User, FileText, Eye, MessageSquare, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SEO } from "@/components/SEO";
+import AdminLayout from "@/layouts/AdminLayout";
 
 // Analytics data types
 interface AnalyticsData {
@@ -80,30 +80,46 @@ export default function Analytics() {
   const data = analyticsData || getSampleData(timeRange);
 
   return (
-    <>
-      <SEO 
-        title="Analytics Dashboard - Admin" 
-        description="View statistics and analytics for your finance blog" 
-      />
-      
+    <AdminLayout 
+      title="Analytics Dashboard"
+      description="View statistics and metrics for your finance and crypto blog"
+    >
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+          <div className="flex items-center">
+            <Activity className="h-8 w-8 text-primary mr-2" />
+            <div>
+              <h2 className="text-2xl font-bold">Content Performance</h2>
+              <p className="text-muted-foreground">Track and analyze your blog's metrics</p>
+            </div>
+          </div>
           
-          <Select 
-            value={timeRange} 
-            onValueChange={setTimeRange}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select time range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">Last 24 hours</SelectItem>
-              <SelectItem value="week">Last 7 days</SelectItem>
-              <SelectItem value="month">Last 30 days</SelectItem>
-              <SelectItem value="year">Last year</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="flex items-center"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            
+            <Select 
+              value={timeRange} 
+              onValueChange={setTimeRange}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Last 24 hours</SelectItem>
+                <SelectItem value="week">Last 7 days</SelectItem>
+                <SelectItem value="month">Last 30 days</SelectItem>
+                <SelectItem value="year">Last year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -322,7 +338,7 @@ export default function Analytics() {
           </TabsContent>
         </Tabs>
       </div>
-    </>
+    </AdminLayout>
   );
 }
 

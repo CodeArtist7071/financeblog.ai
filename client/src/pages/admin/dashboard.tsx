@@ -7,11 +7,12 @@ import { getQueryFn } from "@/lib/queryClient";
 import { Post, Author, Category } from "@shared/schema";
 import { Loader2, BarChart2 } from "lucide-react";
 import { Link } from "wouter";
+import AdminLayout from "@/layouts/AdminLayout";
 import { CreateTopicForm } from "@/components/admin/CreateTopicForm";
 import { CommentsManager } from "@/components/admin/CommentsManager";
 
 export default function AdminDashboard() {
-  const { user, logoutMutation } = useAuth();
+  const { user } = useAuth();
   
   const { data: posts, isLoading: postsLoading } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
@@ -30,26 +31,12 @@ export default function AdminDashboard() {
   
   const isLoading = postsLoading || authorsLoading || categoriesLoading;
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
-
   return (
-    <div className="container mx-auto py-6 max-w-7xl">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back, {user?.username || 'Admin'}
-          </p>
-        </div>
-        <Button variant="outline" onClick={handleLogout}>
-          {logoutMutation.isPending ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : null}
-          Sign Out
-        </Button>
-      </div>
+    <AdminLayout 
+      title="Admin Dashboard"
+      description={`Welcome back, ${user?.username || 'Admin'}`}
+    >
+      <div className="space-y-6">
 
       <Tabs defaultValue="create-topic" className="w-full">
         <TabsList className="mb-4">
@@ -149,6 +136,7 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

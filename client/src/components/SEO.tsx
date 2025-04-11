@@ -1,81 +1,60 @@
 import { Helmet } from "react-helmet-async";
 
-interface SEOProps {
+export interface SEOProps {
   title?: string;
   description?: string;
-  image?: string;
-  url?: string;
-  type?: "website" | "article";
-  article?: {
-    publishedTime?: string;
-    modifiedTime?: string;
-    author?: string;
-    section?: string;
-    tags?: string[];
+  canonical?: string;
+  openGraph?: {
+    title?: string;
+    description?: string;
+    url?: string;
+    type?: string;
+    image?: string;
+  };
+  twitter?: {
+    card?: string;
+    title?: string;
+    description?: string;
+    image?: string;
   };
 }
 
 export function SEO({
-  title = "Finance & Crypto Blog",
-  description = "Latest insights, analysis, and news about cryptocurrency, blockchain technology, financial markets, and investment strategies.",
-  image = "/images/default-cover.jpg", // Default image path
-  url = typeof window !== "undefined" ? window.location.href : "",
-  type = "website",
-  article,
+  title = "Finance Blog",
+  description = "Latest finance and cryptocurrency news, analysis and insights",
+  canonical,
+  openGraph,
+  twitter,
 }: SEOProps) {
-  // Build the full title
-  const siteTitle = "FinCrypto Blog";
-  const fullTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
+  // Default title format for all pages
+  const formattedTitle = title
+    ? `${title} | Finance Blog`
+    : "Finance Blog | Finance and Cryptocurrency News";
 
   return (
     <Helmet>
-      {/* Basic meta tags */}
-      <title>{fullTitle}</title>
+      <title>{formattedTitle}</title>
       <meta name="description" content={description} />
+      {canonical && <link rel="canonical" href={canonical} />}
       
-      {/* Canonical URL */}
-      <link rel="canonical" href={url} />
+      {/* OpenGraph tags */}
+      <meta property="og:title" content={openGraph?.title || formattedTitle} />
+      <meta
+        property="og:description"
+        content={openGraph?.description || description}
+      />
+      {openGraph?.url && <meta property="og:url" content={openGraph.url} />}
+      <meta property="og:type" content={openGraph?.type || "website"} />
+      {openGraph?.image && <meta property="og:image" content={openGraph.image} />}
       
-      {/* Open Graph meta tags for Facebook and LinkedIn */}
-      <meta property="og:type" content={type} />
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-      <meta property="og:image" content={image} />
-      <meta property="og:url" content={url} />
-      <meta property="og:site_name" content={siteTitle} />
-      
-      {/* Twitter meta tags */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={image} />
-      
-      {/* Additional article meta tags */}
-      {type === "article" && article && (
-        <>
-          {article.publishedTime && (
-            <meta
-              property="article:published_time"
-              content={article.publishedTime}
-            />
-          )}
-          {article.modifiedTime && (
-            <meta
-              property="article:modified_time"
-              content={article.modifiedTime}
-            />
-          )}
-          {article.author && (
-            <meta property="article:author" content={article.author} />
-          )}
-          {article.section && (
-            <meta property="article:section" content={article.section} />
-          )}
-          {article.tags?.map((tag, index) => (
-            <meta key={index} property="article:tag" content={tag} />
-          ))}
-        </>
-      )}
+      {/* Twitter tags */}
+      <meta name="twitter:card" content={twitter?.card || "summary_large_image"} />
+      <meta name="twitter:title" content={twitter?.title || formattedTitle} />
+      <meta
+        name="twitter:description"
+        content={twitter?.description || description}
+      />
+      {twitter?.image && <meta name="twitter:image" content={twitter.image} />}
     </Helmet>
   );
 }
